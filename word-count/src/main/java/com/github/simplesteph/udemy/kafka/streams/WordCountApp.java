@@ -22,43 +22,45 @@ public class WordCountApp {
 
         KStreamBuilder builder = new KStreamBuilder();
         // 1 - stream from Kafka
+        KStream<String, String> wordCountInput = builder.stream("word-count-input");
 
-        KStream<String, String> textLines = builder.stream("word-count-input");
-        KTable<String, Long> wordCounts = textLines
-                // 2 - map values to lowercase
-                .mapValues(textLine -> textLine.toLowerCase())
+        // 2 - map values to lowercase
+        KTable<String, Long> wordCounts = wordCountInput.mapValues(value -> value.toLowerCase())
                 // can be alternatively written as:
                 // .mapValues(String::toLowerCase)
                 // 3 - flatmap values split by space
-                .flatMapValues(textLine -> Arrays.asList(textLine.split("\\W+")))
+                .flatMapValues(value -> Arrays.asList(value.split(" ")))
                 // 4 - select key to apply a key (we discard the old key)
-                .selectKey((key, word) -> word)
+                .selectKey((ignoredKey, word) -> word)
                 // 5 - group by key before aggregation
                 .groupByKey()
                 // 6 - count occurences
                 .count("Counts");
-
         // 7 - to in order to write the results back to kafka
-        wordCounts.to(Serdes.String(), Serdes.Long(), "word-count-output");
+        wordCounts.to(Serdes.String(), Serdes.Long(),"word-count-output");
 
         KafkaStreams streams = new KafkaStreams(builder, config);
         streams.start();
 
 
+        // print topology
+        System.out.println(streams.toString());
+
 
         // shutdown hook to correctly close the streams application
+        // always do this!!!
         Runtime.getRuntime().addShutdownHook(new Thread(streams::close));
 
         // Update:
         // print the topology every 10 seconds for learning purposes
-        while(true){
+        /*while(true){
             System.out.println(streams.toString());
             try {
                 Thread.sleep(5000);
             } catch (InterruptedException e) {
                 break;
             }
-        }
+        }*/
 
 
     }
