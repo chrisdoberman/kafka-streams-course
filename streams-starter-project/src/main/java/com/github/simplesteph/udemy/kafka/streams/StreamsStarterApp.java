@@ -12,6 +12,7 @@ import java.util.Properties;
 public class StreamsStarterApp {
 
     public static void main(String[] args) {
+        // testing github setup
 
         Properties config = new Properties();
         config.put(StreamsConfig.APPLICATION_ID_CONFIG, "streams-starter-app");
